@@ -3,9 +3,11 @@ package net.engineeringdigest.journalapplication.schedular;
 import net.engineeringdigest.journalapplication.entity.JournalEntry;
 import net.engineeringdigest.journalapplication.entity.User;
 import net.engineeringdigest.journalapplication.enums.Sentiment;
+import net.engineeringdigest.journalapplication.model.SentimentData;
 import net.engineeringdigest.journalapplication.repository.UserRepositoryImpl;
 import net.engineeringdigest.journalapplication.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -19,11 +21,13 @@ public class UserSchedular {
 
     private final EmailService emailService;
     private final UserRepositoryImpl userRepository;
+    private final KafkaTemplate<String, SentimentData> kafkaTemplate;
 
     @Autowired
-    public UserSchedular(EmailService emailService, UserRepositoryImpl userRepository) {
+    public UserSchedular(EmailService emailService, UserRepositoryImpl userRepository, KafkaTemplate<String, SentimentData> kafkaTemplate) {
         this.emailService = emailService;
         this.userRepository = userRepository;
+        this.kafkaTemplate = kafkaTemplate;
     }
 
     @Scheduled(cron = "0 0 9 ? * SUN")
@@ -49,7 +53,9 @@ public class UserSchedular {
                 }
             }
             if(mostFrequentSentiment != null) {
-                emailService.sendEmail(user.getEmail(), "Sentiment for last 7 days", mostFrequentSentiment.toString());
+                SentimentData sentimentData = SentimentData.builder().email(user.getEmail()).sentiment("Sentiment for last 7 days" + mostFrequentSentiment).build();
+                kafkaTemplate.send("weekly-sentiments", sentimentData.getEmail(), sentimentData);
+//                emailService.sendEmail(user.getEmail(), "Sentiment for last 7 days", mostFrequentSentiment.toString());
             }
         }
     }
