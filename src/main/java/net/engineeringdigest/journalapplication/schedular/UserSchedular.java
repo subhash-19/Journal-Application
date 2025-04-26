@@ -31,7 +31,7 @@ public class UserSchedular {
     }
 
     @Scheduled(cron = "0 0 9 ? * SUN")
-    public void fetchUsersAnsSaMail() {
+    public void fetchUsersAndSaMail() {
         List<User> users = userRepository.getUserForSA();
         for (User user: users) {
             List<JournalEntry> journalEntries = user.getJournalEntries();

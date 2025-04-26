@@ -6,12 +6,12 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 @Service
-public class SemtimentConsumerService {
+public class SentimentConsumerService {
 
     private final EmailService emailService;
 
     @Autowired
-    public SemtimentConsumerService(EmailService emailService) {
+    public SentimentConsumerService(EmailService emailService) {
         this.emailService = emailService;
     }
 
