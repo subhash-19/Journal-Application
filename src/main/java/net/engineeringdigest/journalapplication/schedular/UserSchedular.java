@@ -33,30 +33,47 @@ public class UserSchedular {
     @Scheduled(cron = "0 0 9 ? * SUN")
     public void fetchUsersAndSaMail() {
         List<User> users = userRepository.getUserForSA();
-        for (User user: users) {
-            List<JournalEntry> journalEntries = user.getJournalEntries();
+        for (User user : users) {
+            List<Sentiment> sentiments = getRecentSentiments(user);
+            Sentiment mostFrequentSentiment = getMostFrequentSentiment(sentiments);
 
-            List<Sentiment> sentiments = journalEntries.stream().filter(x -> x.getDate().isAfter(LocalDateTime.now().minusDays(7))).map(JournalEntry::getSentiment).toList();
+            if (mostFrequentSentiment != null) {
+                sendSentiment(user, mostFrequentSentiment);
+            }
+        }
+    }
 
-            Map<Sentiment, Integer> sentimentCounts = new EnumMap<>(Sentiment.class);
-            for (Sentiment sentiment: sentiments) {
-                if(sentiment != null) {
-                    sentimentCounts.put(sentiment, sentimentCounts.getOrDefault(sentiment, 0) + 1);
-                }
+    private List<Sentiment> getRecentSentiments(User user) {
+        return user.getJournalEntries().stream()
+                .filter(x -> x.getDate().isAfter(LocalDateTime.now().minusDays(7)))
+                .map(JournalEntry::getSentiment)
+                .toList();
+    }
+
+    private Sentiment getMostFrequentSentiment(List<Sentiment> sentiments) {
+        Map<Sentiment, Integer> sentimentCounts = new EnumMap<>(Sentiment.class);
+
+        for (Sentiment sentiment : sentiments) {
+            if (sentiment != null) {
+                sentimentCounts.put(sentiment, sentimentCounts.getOrDefault(sentiment, 0) + 1);
             }
-            Sentiment mostFrequentSentiment = null;
-            int maxCount = 0;
-            for (Map.Entry<Sentiment, Integer> entry : sentimentCounts.entrySet()) {
-                if(entry.getValue() > maxCount) {
-                    maxCount = entry.getValue();
-                    mostFrequentSentiment = entry.getKey();
-                }
-            }
-            if(mostFrequentSentiment != null) {
-                SentimentData sentimentData = SentimentData.builder().email(user.getEmail()).sentiment("Sentiment for last 7 days" + mostFrequentSentiment).build();
-                kafkaTemplate.send("weekly-sentiments", sentimentData.getEmail(), sentimentData);
-//                emailService.sendEmail(user.getEmail(), "Sentiment for last 7 days", mostFrequentSentiment.toString());
-            }
+        }
+
+        return sentimentCounts.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElse(null);
+    }
+
+    private void sendSentiment(User user, Sentiment mostFrequentSentiment) {
+        try {
+            SentimentData sentimentData = SentimentData.builder()
+                    .email(user.getEmail())
+                    .sentiment("Sentiment for last 7 days: " + mostFrequentSentiment)
+                    .build();
+            kafkaTemplate.send("weekly-sentiments", sentimentData.getEmail(), sentimentData);
+        } catch (Exception e) {
+            emailService.sendEmail(user.getEmail(), "Sentiment for last 7 days", mostFrequentSentiment.toString());
         }
     }
 }
