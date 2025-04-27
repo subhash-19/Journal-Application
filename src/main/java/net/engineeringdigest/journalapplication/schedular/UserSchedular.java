@@ -1,5 +1,7 @@
 package net.engineeringdigest.journalapplication.schedular;
 
+import lombok.extern.slf4j.Slf4j;
+import net.engineeringdigest.journalapplication.cache.AppCache;
 import net.engineeringdigest.journalapplication.entity.JournalEntry;
 import net.engineeringdigest.journalapplication.entity.User;
 import net.engineeringdigest.journalapplication.enums.Sentiment;
@@ -17,14 +19,17 @@ import java.util.List;
 import java.util.Map;
 
 @Component
+@Slf4j
 public class UserSchedular {
 
+    private final AppCache appCache;
     private final EmailService emailService;
     private final UserRepositoryImpl userRepository;
     private final KafkaTemplate<String, SentimentData> kafkaTemplate;
 
     @Autowired
-    public UserSchedular(EmailService emailService, UserRepositoryImpl userRepository, KafkaTemplate<String, SentimentData> kafkaTemplate) {
+    public UserSchedular(AppCache appCache, EmailService emailService, UserRepositoryImpl userRepository, KafkaTemplate<String, SentimentData> kafkaTemplate) {
+        this.appCache = appCache;
         this.emailService = emailService;
         this.userRepository = userRepository;
         this.kafkaTemplate = kafkaTemplate;
@@ -73,7 +78,12 @@ public class UserSchedular {
                     .build();
             kafkaTemplate.send("weekly-sentiments", sentimentData.getEmail(), sentimentData);
         } catch (Exception e) {
-            emailService.sendEmail(user.getEmail(), "Sentiment for last 7 days", mostFrequentSentiment.toString());
+//            emailService.sendEmail(user.getEmail(), "Sentiment for last 7 days", mostFrequentSentiment.toString());
         }
+    }
+
+    @Scheduled(cron = "0 0/10 * ? * *")
+    public void clearAppCache() {
+        appCache.init();
     }
 }
