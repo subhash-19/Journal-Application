@@ -5,6 +5,7 @@ import net.engineeringdigest.journalapplication.dto.UserDTO;
 import net.engineeringdigest.journalapplication.entity.User;
 import net.engineeringdigest.journalapplication.service.UserDetailsServiceImpl;
 import net.engineeringdigest.journalapplication.service.UserService;
+import net.engineeringdigest.journalapplication.utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,19 +20,19 @@ import org.springframework.web.bind.annotation.*;
 //@Tag(name = "Public APIs")
 public class PublicController {
 
-    private final AuthenticationManager authenticationManager;
-    private final UserDetailsServiceImpl userDetailsService;
+    private final JwtUtil jwtUtil;
     private final UserService userService;
+    private final UserDetailsServiceImpl userDetailsService;
+    private final AuthenticationManager authenticationManager;
 
     @Autowired
-    public PublicController(AuthenticationManager authenticationManager, UserDetailsServiceImpl userDetailsService, UserService userService) {
+    public PublicController(JwtUtil jwtUtil, AuthenticationManager authenticationManager, UserDetailsServiceImpl userDetailsService, UserService userService) {
+        this.jwtUtil = jwtUtil;
         this.authenticationManager = authenticationManager;
         this.userDetailsService = userDetailsService;
         this.userService = userService;
     }
 
-//    @Autowired
-//    private JwtUtil jwtUtil;
 
     @GetMapping("/health-check")
     public String healthCheck() {
@@ -55,9 +56,9 @@ public class PublicController {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(user.getUserName(), user.getPassword()));
             UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUserName());
-//            String jwt = jwtUtil.generateToken(userDetails.getUsername());
-//            return new ResponseEntity<>(jwt, HttpStatus.OK);
-            return new ResponseEntity<>(HttpStatus.OK);
+            String jwt = jwtUtil.generateToken(userDetails.getUsername());
+            return new ResponseEntity<>(jwt, HttpStatus.OK);
+
         }catch (Exception e){
             log.error("Exception occurred while createAuthenticationToken ", e);
             return new ResponseEntity<>("Incorrect username or password", HttpStatus.BAD_REQUEST);

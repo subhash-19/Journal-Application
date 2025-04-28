@@ -129,10 +129,34 @@
 			<artifactId>hibernate-validator</artifactId>
 		</dependency>
 
+		<!-- Spring Kafka dependency for publishing and consuming Kafka messages -->
 		<dependency>
 			<groupId>org.springframework.kafka</groupId>
 			<artifactId>spring-kafka</artifactId>
 		</dependency>
+
+		<!-- JJWT API dependency providing interfaces for JWT creation and parsing -->
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-api</artifactId>
+			<version>0.12.5</version>
+		</dependency>
+
+		<!-- JJWT Jackson dependency for JSON serialization and deserialization of JWT claims -->
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-jackson</artifactId>
+			<version>0.12.5</version>
+		</dependency>
+
+		<!-- JJWT Implementation dependency providing the runtime implementation of the JJWT API -->
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-impl</artifactId>
+			<version>0.12.5</version>
+			<scope>runtime</scope>
+		</dependency>
+
 
 	</dependencies>
 
