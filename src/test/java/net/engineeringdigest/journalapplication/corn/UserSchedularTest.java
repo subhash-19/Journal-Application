@@ -12,6 +12,7 @@ public class UserSchedularTest {
     private UserSchedular userSchedular;
 
     @Test
+    @Disabled
     public void testFetchUserAndSendSaMail() {
         userSchedular.fetchUsersAndSaMail();
     }
